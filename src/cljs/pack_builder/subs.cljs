@@ -3,16 +3,11 @@
     (:require [re-frame.core :as re-frame]))
 
 (re-frame/register-sub
- :cells
+ :packs
  (fn [db]
-   (reaction (:cells @db))))
+   (reaction (:packs @db))))
 
 (re-frame/register-sub
- :pack
+ :unused-cells
  (fn [db]
-   (reaction (:pack @db))))
-
-(re-frame/register-sub
- :outliers
- (fn [db]
-   (reaction (:outliers @db))))
+   (reaction (:unused-cells @db))))
