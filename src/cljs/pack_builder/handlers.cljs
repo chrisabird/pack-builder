@@ -65,34 +65,8 @@
       (map #(groups data distance %)
            (iterate (iterate-means data distance median) guesses)))))
 
-(defn calculate-shortest-distances [cells centers] 
-  (map (fn [cell] 
-         (first 
-           (min 
-             (map (fn [center] 
-                    (Math/pow (distance cell center) 2)) 
-                  centers)))) 
-       cells))
-
-(defn new-center [distances cells]
-  (let [sum (reduce + 0.0 distances)
-        cums (reductions + distances)
-        prob (map-indexed (fn [idx itm] [idx itm]) cums)
-        r (rand)
-        index (first (first (filter #(> (second %) (* r sum)) prob)))]
-      (nth cells index)))
-
-(defn init-centers [cells total]
-  (let [guess-centers [(rand-nth cells)]]
-    (loop [centers guess-centers]
-      (if (= total (count centers))
-        centers
-        (let [distances (calculate-shortest-distances cells centers)
-            new-centers (conj centers (new-center distances cells))]
-          (recur new-centers))))))
-
-(defn k-group [cells number-of-packs]
-  (let [centers (init-centers cells number-of-packs)]
+(defn k-group [cells]
+  (let [centers [(apply min-key :capacity cells)(apply max-key :capacity cells)]]
     (last ((k-groups cells) centers))))
 
 (defn refine-to-cells-outside-two-std [unused-cells]
@@ -114,13 +88,12 @@
 (defn convert-cell-groups-to-packs [cell-groups]
   (map convert-cell-group-to-pack cell-groups))
 
-(defn generate-packs [number-of-packs unused-cells]
+(defn generate-packs [unused-cells]
   (if (> (count unused-cells) 0) 
-    (let [cell-groups (k-group unused-cells number-of-packs)
+    (let [cell-groups (k-group unused-cells)
           packs (convert-cell-groups-to-packs cell-groups)]
       packs)
     []))
-
 
 (defn parse-capacities [capacities]
   (map js/parseInt (map clojure.string/trim (clojure.string/split capacities #","))))
@@ -152,7 +125,7 @@
           outliers (refine-to-cells-outside-two-std unused-cells)
           cells (remove (set outliers) unused-cells)
           old-packs (:packs db)
-          generated-packs (generate-packs 2 cells)
+          generated-packs (generate-packs cells)
           new-packs (concat old-packs generated-packs)]
       (conj db {:unused-cells outliers :packs new-packs}))))
 
@@ -161,7 +134,7 @@
   (fn [db [_ id]]
     (let [cells (:cells (first (filter #(= (:id %) id) (:packs db))))
           old-packs (remove #(= (:id %) id) (:packs db))
-          split-packs (generate-packs 2 cells)
+          split-packs (generate-packs cells)
           new-packs (concat old-packs split-packs)]
       (conj db [:packs new-packs]))))
 
