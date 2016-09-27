@@ -1,48 +1,57 @@
 (ns pack-builder.views
-    (:require [re-frame.core :as re-frame]))
+    (:require [re-frame.core :as re-frame]
+              [promesa.core :as promesa]))
 
 (defn main-panel []
   (let [unused-cells (re-frame/subscribe [:unused-cells])
-        packs (re-frame/subscribe [:packs])]
+        packs (re-frame/subscribe [:packs])
+        loading (re-frame/subscribe [:loading])]
     (fn []
-      [:div {:class "container"} 
-       [:div {:class "row"}
-        [:div {:class "col-md-12 "} 
+      [:div.container-fluid 
+       [:div.row
+        [:div.col-md-12 
 
+        [:h3 "Cells"]
+        [:div.form-group
+          [:label.form-label "Comma seperated list of cell capacities in mAH to be added to the packs"]
+          [:textarea.form-control {:on-change #(re-frame/dispatch [:update-capacities (-> % .-target .-value)]) }]]
+
+        [:hr]
+        [:h3 "Packs Options"]
+         [:div.form
           [:div.form-group
-            [:label.form-label "Cell Capacities"]
-            [:span.help-block "Comma seperated list of cell capacities in mAH to be added to the builder"]
-            [:textarea.form-control {:on-change #(re-frame/dispatch [:update-capacities (-> % .-target .-value)]) }]]
-          [:button.btn.btn-default {:on-click #(re-frame/dispatch [:add-cells nil])} "Add Cells"]
+            [:label {:for "numberOfSeriesCells"} "Numer of cell in series "]
+            [:input.form-control {:type "text"  
+                                  :id "numberOfSeriesCells"
+                                  :on-change #(re-frame/dispatch [:update-number-of-series-cells (-> % .-target .-value)])}]]
+          [:div.form-group
+            [:label {:for "numberOfParrallelCells"} "Number of cells in parrallel "]
+            [:input.form-control {:type "text"  
+                                  :id "numberOfParrallelCells"
+                                  :on-change #(re-frame/dispatch [:update-number-of-parrallel-cells (-> % .-target .-value)])}]]
 
-          [:hr]
-          [:h3 "Unused"]
-          [:span.help-block "These are the cells still available to build packs"]
-          [:div.well
-            (for [unused-cell @unused-cells]
-              ^{:key (:id unused-cell)}
-              [:div.btn-group 
-                [:button.btn.btn-default.dropdown-toggle {:type "button" :data-toggle "dropdown" :aria-haspopup "true" :area-expanded "false"} (:capacity unused-cell) " " [:span.caret ""]]
-                [:ul.dropdown-menu
-                  [:li [:a {:on-click #(re-frame/dispatch [:delete-cell (:id unused-cell)])} "Delete"]]]])
-           [:hr]
-           [:button {:class "btn btn-info"
-                     :on-click #(re-frame/dispatch [:generate-packs nil])} "Split cells into two packs"]]
+         [:button {:class "btn btn-info"
+                   :on-click #(do
+                                (re-frame/dispatch-sync [:clear-packs nil])
+                                (promesa/schedule 500 (fn [] (re-frame/dispatch [:generate-packs nil]))))} "Generate packs"]]
          
           [:hr]
-          [:h3 "Packs"]
+          (let [is-loading @loading]
+            (if is-loading 
+            [:div
+             [:h3 "Packs"]
+              [:div.well
+                [:p.lead.text-center "Building you're packs..."]]]
+            [:h3 "Packs"]))
+
           (for [pack @packs]
             ^{:key (:id pack)}
             [:div {:class "well"}
               [:p [:strong "Capacity: "] (:total-capacity pack)]
-              [:p [:strong "Std Deviation "] (:std-deviation pack)]
-              [:p [:strong "Median "] (:median pack)]
+              [:p [:strong "Divergence: "] (:divergence pack)]
+              [:p [:strong "Deviation: "] (:deviation pack)]
               (for [cell (:cells pack)]
                 ^{:key (:id cell)} 
-                [:div.btn-group
-                  [:button.btn.btn-default.dropdown-toggle {:type "button" :data-toggle "dropdown" :aria-haspopup "true" :aria-expanded "false"} (:capacity cell) " " [:span.caret ""]]
-                  [:ul.dropdown-menu
-                    [:li [:a {:on-click #(re-frame/dispatch [:unallocate-cell [(:id pack) (:id cell)]])} "Unallocate"]]]])
+                  [:button.btn.btn-default {:type "button"} (:capacity cell)])
               [:hr]
-              [:button.btn.btn-info {:on-click #(re-frame/dispatch [:split-pack (:id pack)])} "Split cells into two packs" ]
-              [:button.btn.btn-danger {:on-click #(re-frame/dispatch [:unallocate-pack (:id pack)])} "Unallocate All"]])]]])))
+             ])]]])))

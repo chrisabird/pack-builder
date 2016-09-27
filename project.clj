@@ -3,6 +3,7 @@
                  [org.clojure/clojurescript "1.8.51"]
                  [reagent "0.5.1"]
                  [binaryage/devtools "0.6.1"]
+                 [funcool/promesa "1.5.0"]
                  [re-frame "0.7.0"]]
 
   :plugins [[lein-cljsbuild "1.1.3"]]

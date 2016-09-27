@@ -3,21 +3,11 @@
               [pack-builder.db :as db]))
 
 (defn mean [coll]
-    (let [sum (reduce #(+ %1 (:capacity %2)) 0 coll)
-                  count (count coll)]
-          (if (pos? count)
-                  (/ sum count)
-                  0)))
-(defn median [& coll]
-  (let [sorted (sort-by :capacity coll)
-        cnt (count sorted)
-        halfway (quot cnt 2)]
-    (if (odd? cnt)
-      (:capacity (nth sorted halfway)) ; (1)
-      (let [bottom (dec halfway)
-            bottom-val (nth sorted bottom)
-            top-val (nth sorted halfway)]
-        (mean [bottom-val top-val]))))) 
+  (let [sum (reduce #(+ %1 (:capacity %2)) 0 coll)
+        count (count coll)]
+    (if (pos? count)
+      (/ sum count)
+      0)))
 
 (defn standard-deviation [coll]
   (let [avg (mean coll)
@@ -29,70 +19,53 @@
            (- total 1))
         (Math/sqrt))))
 
-(defn distance[ca cb] 
-  (let [a (:capacity ca)
-        b (:capacity cb)]
-  (if (< a b) (- b a) (- a b))))
+(defn total-capacity [cells]
+   (reduce #(+ %1 (:capacity %2)) 0 cells))
 
-(defn closest [point means distance]
-    (first (sort-by #(distance % point) means)))
+(defn convert-cell-group-to-pack [cells average-capacity]
+  (let [capacity (total-capacity cells)]
+    {:id (random-uuid)
+     :total-capacity capacity
+     :divergence (- capacity average-capacity)
+     :deviation (standard-deviation cells)
+     :cells cells}))
 
-(defn point-groups [means data distance]
-    (group-by #(closest % means distance) data))
+(defn guess-next [solution]
+  (let [l (- (count solution) 1)
+        a (rand-int l)
+        b (rand-int l)]
+    (assoc (assoc (vec solution) b (nth solution a)) a (nth solution b))))
 
-(defn average [& list] (/ (reduce + list) (count list)))
+(defn cost [cells average-required p]
+  (let [packs (partition p cells)]
+    (reduce + (map #(+ (standard-deviation %1) (.abs js/Math (- (total-capacity %1) average-required))) packs))))
 
-(defn new-means [average point-groups old-means]
-    (for [o old-means]
-          (if (contains? point-groups o)
-                  (apply average (get point-groups o)) o)))
+(defn acceptance-probability [old-cost new-cost average-required p t]
+  (.pow js/Math (aget js/Math "E") (/ (- old-cost new-cost) t)))
 
-(defn iterate-means [data distance average]
-    (fn [means] (new-means average (point-groups means data distance) means)))
+(defn organise-cells [cells s p]
+  (let [total-cells (* s p)
+        old-solution (atom (take total-cells (sort-by :capacity cells)))
+        old-cost (atom (aget js/Number "MAX_VALUE"))
+        average-required (/ (total-capacity @old-solution) s)]
+    (doall 
+      (for [t (take-while #(> %1 0.00001) (iterate (partial * 0.93) 1.0))
+            i (range 100)
+            :let [new-solution (guess-next @old-solution)
+                  new-cost (cost new-solution average-required p)]
+            :when (> (acceptance-probability @old-cost new-cost average-required p t) (rand))]
+          (do
+            (reset! old-solution new-solution)
+            (reset! old-cost new-cost))))
+    (map #(convert-cell-group-to-pack %1 average-required) (partition p @old-solution))))
 
-(defn groups [data distance means]
-  (vals (point-groups means data distance)))
-
-(defn take-while-unstable 
-  ([sq] (lazy-seq (if-let [sq (seq sq)]
-                    (cons (first sq) (take-while-unstable (rest sq) (first sq))))))
-  ([sq last] (lazy-seq (if-let [sq (seq sq)]
-                         (if (= (:capacity (first sq)) (:capacity last)) '() (take-while-unstable sq))))))
-
-(defn k-groups [data]
-  (fn [guesses]
-    (take-while-unstable
-      (map #(groups data distance %)
-           (iterate (iterate-means data distance median) guesses)))))
-
-(defn k-group [cells]
-  (let [centers [(apply min-key :capacity cells)(apply max-key :capacity cells)]]
-    (last ((k-groups cells) centers))))
-
-(defn refine-to-cells-outside-two-std [unused-cells]
-    (let [mean (mean unused-cells)
-          std (* 2 (standard-deviation unused-cells))
-          lower (- std mean)
-          upper (+ std mean)]
-      (filter #(or (< (:capacity %) lower) (> (:capacity %) upper)) unused-cells)))
-
-
-(defn convert-cell-group-to-pack [cells]
-  {:id (random-uuid)
-   :total-capacity (* (count cells) (:capacity (apply min-key :capacity cells)))
-   :std-deviation (standard-deviation cells)
-   :median (apply median cells)
-   :cells cells}) 
-
-
-(defn convert-cell-groups-to-packs [cell-groups]
-  (map convert-cell-group-to-pack cell-groups))
-
-(defn generate-packs [unused-cells]
-  (if (> (count unused-cells) 0) 
-    (let [cell-groups (k-group unused-cells)
-          packs (convert-cell-groups-to-packs cell-groups)]
-      packs)
+(defn generate-packs [unused-cells number-of-packs number-of-cells-per-pack]
+  (if 
+    (and 
+      (> number-of-packs 0)
+      (> number-of-cells-per-pack 0)
+      (>= (count unused-cells) (* number-of-packs number-of-cells-per-pack))) 
+    (organise-cells unused-cells number-of-packs number-of-cells-per-pack)
     []))
 
 (defn parse-capacities [capacities]
@@ -104,7 +77,11 @@
 (re-frame/register-handler
   :initialize-db
   (fn  [_ _]
-    {:capacities [], :unused-cells [], :packs []}))
+    {:capacities []
+     :number-of-series-cells 0  
+     :number-of-parrallel-cells 0
+     :packs []
+     :loading false}))
 
 (re-frame/register-handler
   :update-capacities
@@ -113,59 +90,27 @@
       (conj db [:capacities new-cells]))))
 
 (re-frame/register-handler
-  :add-cells
-  (fn [db _]
-    (let [new-cells (create-cells-from-capacities (:capacities db))]
-      (conj db [:unused-cells (concat (:unused-cells db) new-cells)]))))
+  :update-number-of-series-cells
+  (fn [db [_ number-of-cells]]
+    (let [cells (js/parseInt (clojure.string/trim number-of-cells))]
+      (conj db [:number-of-series-cells cells]))))
+
+(re-frame/register-handler
+  :update-number-of-parrallel-cells
+  (fn [db [_ number-of-cells]]
+    (let [cells (js/parseInt (clojure.string/trim number-of-cells))]
+      (conj db [:number-of-parrallel-cells cells]))))
+
 
 (re-frame/register-handler
   :generate-packs
   (fn [db _]
-    (let [unused-cells (:unused-cells db)
-          outliers (refine-to-cells-outside-two-std unused-cells)
-          cells (remove (set outliers) unused-cells)
-          old-packs (:packs db)
-          generated-packs (generate-packs cells)
-          new-packs (concat old-packs generated-packs)]
-      (conj db {:unused-cells outliers :packs new-packs}))))
+    (let [unused-cells (create-cells-from-capacities (:capacities db))
+          new-packs (generate-packs unused-cells (:number-of-series-cells db) (:number-of-parrallel-cells db))]
+      (conj db {:packs new-packs :loading false}))))
+
 
 (re-frame/register-handler
-  :split-pack
-  (fn [db [_ id]]
-    (let [cells (:cells (first (filter #(= (:id %) id) (:packs db))))
-          old-packs (remove #(= (:id %) id) (:packs db))
-          split-packs (generate-packs cells)
-          new-packs (concat old-packs split-packs)]
-      (conj db [:packs new-packs]))))
-
-(re-frame/register-handler
-  :unallocate-pack
-  (fn [db [_ id]]
-    (let [unused-cells (:unused-cells db)
-          cells (:cells (first (filter #(= (:id %) id) (:packs db))))
-          new-packs (remove #(= (:id %) id) (:packs db))
-          new-unused-cells (concat unused-cells cells)]
-      (conj db {:unused-cells new-unused-cells :packs new-packs}))))
-
-(re-frame/register-handler
-  :unallocate-cell
-  (fn [db [_ ids]]
-    (let [pack-id (first ids)
-          cell-id (second ids)
-          unused-cells (:unused-cells db)
-          packs (:packs db)
-          pack (first (filter #(= (:id %) pack-id) packs))
-          cells (:cells pack)
-          unused-cell (first (filter #(= (:id %) cell-id) cells))
-          new-cells (remove #(= (:id %) cell-id) cells)
-          new-pack (convert-cell-group-to-pack new-cells)
-          new-packs (conj (remove #(= (:id %) pack-id) (:packs db)) new-pack)
-          new-unused-cells (conj unused-cells unused-cell)]
-      (println "unallocate")
-      (conj db {:unused-cells new-unused-cells :packs new-packs}))))
-
-(re-frame/register-handler
-  :delete-cell
-  (fn [db [_ id]]
-    (let [new-cells (remove #(= (:id %) id) (:unused-cells db))]
-      (conj db [:unused-cells  new-cells]))))
+  :clear-packs
+  (fn [db _]
+    (conj db {:packs [] :loading true})))

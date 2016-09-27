@@ -8,6 +8,11 @@
    (reaction (:packs @db))))
 
 (re-frame/register-sub
+ :loading
+ (fn [db]
+   (reaction (:loading @db))))
+
+(re-frame/register-sub
  :unused-cells
  (fn [db]
    (reaction (:unused-cells @db))))
