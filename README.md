@@ -1,6 +1,6 @@
 # pack-builder
 
-A [re-frame](https://github.com/Day8/re-frame) application designed to ... well, that part is up to you.
+Single Page App to help balance packs of recycled li-ion 18650 cells
 
 ## Development Mode
 
