@@ -17,15 +17,15 @@
           [:textarea.form-control {:on-change #(re-frame/dispatch [:update-capacities (-> % .-target .-value)]) }]]
 
         [:hr]
-        [:h3 "Packs Options"]
+        [:h3 "Pack Options"]
          [:div.form
           [:div.form-group
-            [:label {:for "numberOfSeriesCells"} "Numer of cell in series "]
+            [:label {:for "numberOfSeriesCells"} "Nubmer of cell in series "]
             [:input.form-control {:type "text"  
                                   :id "numberOfSeriesCells"
                                   :on-change #(re-frame/dispatch [:update-number-of-series-cells (-> % .-target .-value)])}]]
           [:div.form-group
-            [:label {:for "numberOfParrallelCells"} "Number of cells in parrallel "]
+            [:label {:for "numberOfParrallelCells"} "Number of cells in parallel "]
             [:input.form-control {:type "text"  
                                   :id "numberOfParrallelCells"
                                   :on-change #(re-frame/dispatch [:update-number-of-parrallel-cells (-> % .-target .-value)])}]]
