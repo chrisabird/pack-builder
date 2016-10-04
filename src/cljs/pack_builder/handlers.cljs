@@ -1,6 +1,5 @@
 (ns pack-builder.handlers
-    (:require [re-frame.core :as re-frame]
-              [pack-builder.db :as db]))
+    (:require [re-frame.core :as re-frame]))
 
 (defn mean [coll]
   (let [sum (reduce #(+ %1 (:capacity %2)) 0 coll)
@@ -79,7 +78,7 @@
   (fn  [_ _]
     {:capacities []
      :number-of-series-cells 0  
-     :number-of-parrallel-cells 0
+     :number-of-parallel-cells 0
      :packs []
      :loading false}))
 
@@ -96,17 +95,17 @@
       (conj db [:number-of-series-cells cells]))))
 
 (re-frame/register-handler
-  :update-number-of-parrallel-cells
+  :update-number-of-parallel-cells
   (fn [db [_ number-of-cells]]
     (let [cells (js/parseInt (clojure.string/trim number-of-cells))]
-      (conj db [:number-of-parrallel-cells cells]))))
+      (conj db [:number-of-parallel-cells cells]))))
 
 
 (re-frame/register-handler
   :generate-packs
   (fn [db _]
     (let [unused-cells (create-cells-from-capacities (:capacities db))
-          new-packs (generate-packs unused-cells (:number-of-series-cells db) (:number-of-parrallel-cells db))]
+          new-packs (generate-packs unused-cells (:number-of-series-cells db) (:number-of-parallel-cells db))]
       (conj db {:packs new-packs :loading false}))))
 
 

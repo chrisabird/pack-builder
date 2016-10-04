@@ -16,3 +16,27 @@
  :unused-cells
  (fn [db]
    (reaction (:unused-cells @db))))
+
+(re-frame/register-sub
+ :number-of-cells-required
+ (fn [db]
+   (reaction (* (:number-of-parallel-cells @db) (:number-of-series-cells @db)))))
+
+(re-frame/register-sub
+ :number-of-series-cells
+ (fn [db]
+   (reaction (:number-of-series-cells @db))))
+
+(re-frame/register-sub
+ :number-of-parallel-cells
+ (fn [db]
+   (reaction (:number-of-parallel-cells @db))))
+
+(re-frame/register-sub
+ :are-not-enough-cells
+ (fn [db]
+   (reaction (< 
+               (count (:capacities @db)) 
+               (* 
+                 (:number-of-parallel-cells @db) 
+                 (:number-of-series-cells @db))))))
