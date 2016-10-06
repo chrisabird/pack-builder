@@ -44,7 +44,7 @@
 
 (defn organise-cells [cells s p]
   (let [total-cells (* s p)
-        old-solution (atom (take total-cells (sort-by :capacity cells)))
+        old-solution (atom (take total-cells (sort-by :capacity > cells)))
         old-cost (atom (aget js/Number "MAX_VALUE"))
         average-required (/ (total-capacity @old-solution) s)]
     (doall 
