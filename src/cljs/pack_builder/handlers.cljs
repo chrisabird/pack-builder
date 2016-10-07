@@ -23,7 +23,7 @@
 
 (defn convert-cell-group-to-pack [cells average-capacity]
   (let [capacity (total-capacity cells)]
-    {:id (random-uuid)
+    {:id (str (random-uuid))
      :total-capacity capacity
      :divergence (- capacity average-capacity)
      :deviation (standard-deviation cells)
@@ -67,49 +67,51 @@
     (organise-cells unused-cells number-of-packs number-of-cells-per-pack)
     []))
 
-(defn parse-capacities [capacities]
-  (map js/parseInt (map clojure.string/trim (clojure.string/split capacities #","))))
-
 (defn create-cells-from-capacities [capacities]
-  (map (fn [c] {:id (random-uuid) :capacity c}) capacities))
+  (map (fn [c] {:id (str (random-uuid)) :capacity c}) capacities))
 
-(re-frame/register-handler
-  :initialize-db
-  (fn  [_ _]
-    {:capacities []
-     :number-of-series-cells 0  
-     :number-of-parallel-cells 0
-     :packs []
-     :loading false}))
+(defn parse-capacities [capacities]
+  (create-cells-from-capacities
+    (remove js/isNaN 
+            (map js/parseInt 
+                 (map clojure.string/trim 
+                      (clojure.string/split capacities #","))))))
 
-(re-frame/register-handler
-  :update-capacities
-  (fn [db [_ capacities]]
-    (let [new-cells (parse-capacities capacities)]
-      (conj db [:capacities new-cells]))))
+(defn parse-number [s]
+  (let [number (js/parseInt (clojure.string/trim s))]
+    (if (js/isNaN number) 0 number)))
 
-(re-frame/register-handler
-  :update-number-of-series-cells
-  (fn [db [_ number-of-cells]]
-    (let [cells (js/parseInt (clojure.string/trim number-of-cells))]
-      (conj db [:number-of-series-cells cells]))))
+(defn mark-as-used [id pack]
+  (conj pack [:cells (map (fn [cell] 
+                            (if (= (:id cell) id)
+                              (conj cell [:used (not (:used cell))])
+                              cell)) 
+                            (:cells pack))]))
 
-(re-frame/register-handler
-  :update-number-of-parallel-cells
-  (fn [db [_ number-of-cells]]
-    (let [cells (js/parseInt (clojure.string/trim number-of-cells))]
-      (conj db [:number-of-parallel-cells cells]))))
+(defn initialize-db [_ _]
+  {:available-cells []
+   :number-of-series-cells 0  
+   :number-of-parallel-cells 0
+   :packs []
+   :loading-packs false})
 
+(defn available-cells-changed [db [_ capacities]]
+  (conj db [:available-cells (parse-capacities capacities)]))
 
-(re-frame/register-handler
-  :generate-packs
-  (fn [db _]
-    (let [unused-cells (create-cells-from-capacities (:capacities db))
-          new-packs (generate-packs unused-cells (:number-of-series-cells db) (:number-of-parallel-cells db))]
-      (conj db {:packs new-packs :loading false}))))
+(defn number-of-series-cells-changed [db [_ number-of-cells]]
+  (conj db [:number-of-series-cells (parse-number number-of-cells)]))
 
+(defn number-of-parallel-cells-changed [db [_ number-of-cells]]
+  (conj db [:number-of-parallel-cells (parse-number number-of-cells)]))
 
-(re-frame/register-handler
-  :clear-packs
-  (fn [db _]
-    (conj db {:packs [] :loading true})))
+(defn cells-need-allocating [db _]
+    (let [new-packs (generate-packs (:available-cells db) 
+                                    (:number-of-series-cells db) 
+                                    (:number-of-parallel-cells db))]
+      (conj db {:packs new-packs :building-packs false})))
+
+(defn allocated-cell-used [db [_ id]]
+  (conj db [:packs (map #(mark-as-used id %1) (:packs db))]))
+
+(defn packs-need-rebuilding [db _]
+    (conj db {:packs [] :building-packs true}))

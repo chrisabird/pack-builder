@@ -1,42 +1,60 @@
 (ns pack-builder.subs
-    (:require-macros [reagent.ratom :refer [reaction]])
     (:require [re-frame.core :as re-frame]))
 
-(re-frame/register-sub
- :packs
- (fn [db]
-   (reaction (:packs @db))))
+(defn packs[db]
+  (:packs db))
 
-(re-frame/register-sub
- :loading
- (fn [db]
-   (reaction (:loading @db))))
+(defn enough-cells? [db]
+  (>=
+    (count (:available-cells db)) 
+    (* 
+      (:number-of-parallel-cells db) 
+      (:number-of-series-cells db))))
 
-(re-frame/register-sub
- :unused-cells
- (fn [db]
-   (reaction (:unused-cells @db))))
+(defn required-cells-message [db messages]
+  (if (enough-cells? db) 
+    messages 
+    (conj messages {:type :error 
+                    :content (str 
+                               "You only have "
+                               (count (:available-cells db))
+                               " cells, you need at least "
+                               (* (:number-of-series-cells db) (:number-of-parallel-cells db))
+                               " cells to generate a "
+                               (:number-of-series-cells db)
+                               "S"   
+                               (:number-of-parallel-cells db)
+                               "P pack")})))
 
-(re-frame/register-sub
- :number-of-cells-required
- (fn [db]
-   (reaction (* (:number-of-parallel-cells @db) (:number-of-series-cells @db)))))
+(defn series-cells-message [db messages]
+  (if (and (> (count (:available-cells db)) 0)  (= (:number-of-series-cells db) 0))
+    (conj messages {:type :warning
+                    :content "You'll need to specify how many cells in series before you can generate a pack"})
+    messages))
 
-(re-frame/register-sub
- :number-of-series-cells
- (fn [db]
-   (reaction (:number-of-series-cells @db))))
+(defn parallel-cells-message [db messages]
+  (if (and (> (count (:available-cells db)) 0)  (= (:number-of-parallel-cells db) 0))
+    (conj messages {:type :warning 
+                    :content "You'll need to specify how many cells in parallel before you can generate a pack"})
+    messages))
 
-(re-frame/register-sub
- :number-of-parallel-cells
- (fn [db]
-   (reaction (:number-of-parallel-cells @db))))
+(defn building-packs-message [db messages]
+  (if (:building-packs db)
+    (conj messages {:type :info 
+                    :content "Building your packs..."})
+    messages))
 
-(re-frame/register-sub
- :are-not-enough-cells
- (fn [db]
-   (reaction (< 
-               (count (:capacities @db)) 
-               (* 
-                 (:number-of-parallel-cells @db) 
-                 (:number-of-series-cells @db))))))
+
+
+(defn messages [db]
+  (->> []
+      (required-cells-message db)
+      (building-packs-message db)
+      (series-cells-message db)
+      (parallel-cells-message db)))
+
+(defn can-generate-packs [db]
+  (and 
+    (> (:number-of-series-cells db) 0)
+    (> (:number-of-parallel-cells db) 0)
+    (enough-cells? db)))

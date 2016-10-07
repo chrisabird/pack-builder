@@ -25,10 +25,20 @@
 
   :cljsbuild
   {:builds
-   [{:id           "dev"
+   [
+    {:id           "dev"
      :source-paths ["src/cljs"]
      :figwheel     {:on-jsload "pack-builder.core/mount-root"}
      :compiler     {:main                 pack-builder.core
+                    :output-to            "resources/public/js/compiled/app.js"
+                    :output-dir           "resources/public/js/compiled/out"
+                    :asset-path           "js/compiled/out"
+                    :source-map-timestamp true}}
+    
+    {:id           "test"
+     :source-paths ["src/cljs", "test/cljs"]
+     :figwheel     {:on-jsload "pack-builder.test.core/run"}
+     :compiler     {:main                 pack-builder.test.core
                     :output-to            "resources/public/js/compiled/app.js"
                     :output-dir           "resources/public/js/compiled/out"
                     :asset-path           "js/compiled/out"
