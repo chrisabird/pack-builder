@@ -27,7 +27,7 @@
      :total-capacity capacity
      :divergence (- capacity average-capacity)
      :deviation (standard-deviation cells)
-     :cells cells}))
+     :cells (sort-by :capacity > cells)}))
 
 (defn guess-next [solution]
   (let [l (- (count solution) 1)

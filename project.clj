@@ -40,7 +40,7 @@
      :figwheel     {:on-jsload "pack-builder.test.core/run"}
      :compiler     {:main                 pack-builder.test.core
                     :output-to            "resources/public/js/compiled/app.js"
-                    :output-dir           "resources/public/js/compiled/out"
+                    :output-dir           "resources/public/js/compiled/out-test"
                     :asset-path           "js/compiled/out"
                     :source-map-timestamp true}}
 
