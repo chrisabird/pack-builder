@@ -41,7 +41,7 @@
      :compiler     {:main                 pack-builder.test.core
                     :output-to            "resources/public/js/compiled/app.js"
                     :output-dir           "resources/public/js/compiled/out-test"
-                    :asset-path           "js/compiled/out"
+                    :asset-path           "js/compiled/out-test"
                     :source-map-timestamp true}}
 
     {:id           "min"
