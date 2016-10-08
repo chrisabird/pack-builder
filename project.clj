@@ -4,7 +4,6 @@
                  [reagent "0.5.1"]
                  [binaryage/devtools "0.6.1"]
                  [funcool/promesa "1.5.0"]
-                 [dbscan "0.1.0"]
                  [re-frame "0.7.0"]]
 
   :plugins [[lein-cljsbuild "1.1.3"]]

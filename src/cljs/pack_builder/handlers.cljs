@@ -83,7 +83,7 @@
 
 (defn generate-variable-packs [unused-cells number-of-packs]
   (let [cells (into [] unused-cells)
-        clusters (dbscan/DBSCAN cells 30 2)
+        clusters (dbscan/DBSCAN cells 20 3)
         packs (map (fn [c] (sort-by :capacity > (map #(get cells %1) c))) (first clusters))
         sorted-packs (sort-by count > packs)
         needed-packs (take number-of-packs sorted-packs) 
