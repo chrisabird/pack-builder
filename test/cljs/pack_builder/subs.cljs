@@ -34,17 +34,21 @@
 
 ;; parallel cell message
 (deftest should-show-message-if-there-are-available-cells-but-parallel-is-zero
-  (let [db {:available-cells [{:capacity 1000}] :number-of-parallel-cells 0 :number-of-series-cells 1}
+  (let [db {:pack-type :fixed-cells :available-cells [{:capacity 1000}] :number-of-parallel-cells 0 :number-of-series-cells 1}
         message (first (sub/messages db))]
     (is (= "You'll need to specify how many cells in parallel before you can generate a pack" (:content message)))
     (is (= :warning (:type message)))))
 
 (deftest should-not-show-message-if-there-are-available-cells-and-parallel-is-greater-than-zero
-  (let [db {:available-cells [{:capacity 1000} {:capacity 2000}] :number-of-series-cells 1 :number-of-parallel-cells 2}]
+  (let [db {:pack-type :fixed-cells :available-cells [{:capacity 1000} {:capacity 2000}] :number-of-series-cells 1 :number-of-parallel-cells 2}]
     (is (= 0 (count (sub/messages db))))))
 
 (deftest should-not-show-message-if-there-are-no-available-cells-and-parallel-is-greater-than-zero
-  (let [db {:available-cells [] :number-of-series-cells 0 :number-of-parallel-cells 1}]
+  (let [db {:pack-type :fixed-cells :available-cells [] :number-of-series-cells 0 :number-of-parallel-cells 1}]
+    (is (= 0 (count (sub/messages db))))))
+
+(deftest should-not-show-message-for-parallel-cells-if-pack-type-variable
+  (let [db {:pack-type :variable-cells :available-cells [{:capacity 1000}] :number-of-series-cells 1 :number-of-parallel-cells 0}]
     (is (= 0 (count (sub/messages db))))))
 
 ;; parallel cell message

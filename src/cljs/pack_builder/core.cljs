@@ -16,6 +16,7 @@
 
 (defn register-handlers []
   (re-frame/register-handler :initialize-db handlers/initialize-db)
+  (re-frame/register-handler :type-of-pack-changed handlers/type-of-pack-changed)
   (re-frame/register-handler :available-cells-changed handlers/available-cells-changed)
   (re-frame/register-handler :number-of-series-cells-changed handlers/number-of-series-cells-changed)
   (re-frame/register-handler :number-of-parallel-cells-changed handlers/number-of-parallel-cells-changed)

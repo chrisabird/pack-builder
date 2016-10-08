@@ -33,9 +33,13 @@
     messages))
 
 (defn parallel-cells-message [db messages]
-  (if (and (> (count (:available-cells db)) 0)  (= (:number-of-parallel-cells db) 0))
-    (conj messages {:type :warning 
-                    :content "You'll need to specify how many cells in parallel before you can generate a pack"})
+  (if (= :fixed-cells (:pack-type db))
+
+    (if (and (> (count (:available-cells db)) 0)  
+           (= (:number-of-parallel-cells db) 0))
+      (conj messages {:type :warning 
+                      :content "You'll need to specify how many cells in parallel before you can generate a pack"})
+      messages)
     messages))
 
 (defn building-packs-message [db messages]
@@ -56,5 +60,5 @@
 (defn can-generate-packs [db]
   (and 
     (> (:number-of-series-cells db) 0)
-    (> (:number-of-parallel-cells db) 0)
+    (or (> (:number-of-parallel-cells db) 0) (= :variable-cells (:pack-type db)))
     (enough-cells? db)))

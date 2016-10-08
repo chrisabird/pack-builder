@@ -8,6 +8,7 @@
   (let [db []
         modified-db (handlers/initialize-db db nil)]
     (is (not (:building-packs modified-db)))
+    (is (= :fixed-cells (:pack-type modified-db)))
     (is (= 0 (count (:available-cells modified-db))))
     (is (= 0 (:number-of-series-cells modified-db)))
     (is (= 0 (:number-of-parallel-cells modified-db)))))
@@ -62,6 +63,17 @@
     (is (= 2000 (:capacity (last available-cells))))))
 
 
+;; type of pack
+(deftest should-parse-type-of-pack-of-fixed-cells
+  (let [db {}
+        pack-type (:pack-type (handlers/type-of-pack-changed db [nil "fixed-cells"]))]
+    (is (= :fixed-cells pack-type))))
+
+(deftest should-parse-type-of-pack-of-variable-cells
+  (let [db {}
+        pack-type (:pack-type (handlers/type-of-pack-changed db [nil "variable-cells"]))]
+    (is (= :variable-cells pack-type))))
+
 ;; series cells
 (deftest should-parse-number-of-series-cells
   (let [db {}
@@ -108,8 +120,16 @@
 
 ;; allocate cells
 (deftest should-be-able-t-allocate-cells-to-packs-in-series-and-parallel-dimensions
-  (let [db {:available-cells [{:capacity 1000} {:capacity 2000} {:capacity 1999} {:capacity 999}] :number-of-series-cells 2 :number-of-parallel-cells 2}
+  (let [db {:pack-type :fixed-cells :available-cells [{:capacity 1000} {:capacity 2000} {:capacity 1999} {:capacity 999}] :number-of-series-cells 2 :number-of-parallel-cells 2}
         modified-db (handlers/cells-need-allocating db [nil nil])]
     (is (= 2 (count (:packs modified-db))))
     (is (= 2 (count (:cells (first (:packs modified-db))))))
     (is (= 2 (count (:cells (first (:packs modified-db))))))))
+
+;; allocate cells
+(deftest should-be-able-t-allocate-cells-to-packs-in-series-with-varying-parallel-dimensions
+  (let [db {:pack-type :variable-cells :available-cells [{:capacity 2010} {:capacity 2015} {:capacity 1900} {:capacity 1910} {:capacity 2010} {:capacity 2015} {:capacity 1900} {:capacity 1910}] :number-of-series-cells 2 :number-of-parallel-cells 2}
+        modified-db (handlers/cells-need-allocating db [nil nil])]
+    (is (= 2 (count (:packs modified-db))))
+    (is (= 4 (count (:cells (first (:packs modified-db))))))
+    (is (= 4 (count (:cells (first (:packs modified-db))))))))

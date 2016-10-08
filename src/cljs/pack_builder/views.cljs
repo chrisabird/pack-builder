@@ -38,6 +38,17 @@
                                       :id "numberOfParrallelCells"
                                       :on-change #(re-frame/dispatch [:number-of-parallel-cells-changed
                                                                       (-> % .-target .-value)])}]]
+              [:div.form-group
+               [:div.radio
+                [:label
+                 [:input {:type "radio" :name "packTypeOption" :id "packTypeFixed" :defaultChecked true
+                          :on-click #(re-frame/dispatch [:type-of-pack-changed "fixed-cells"])}]
+                 "Arrange cells in to packs so each have similar capacity and same number of cells in parallel"]]
+               [:div.radio
+                [:label
+                 [:input {:type "radio" :name "packTypeOption" :id "packTypeVariable"
+                          :on-click #(re-frame/dispatch [:type-of-pack-changed "variable-cells"])}]
+                 "Arrange cells in to packs so each have similar capacity but vary the number of cells in parallel and keep cells in a pack roughly the same capacity"]]]
 
               (if @can-generate-packs
                 [:button {:class "btn btn-info"
