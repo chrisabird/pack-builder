@@ -47,7 +47,15 @@
     {:id           "min"
      :source-paths ["src/cljs"]
      :compiler     {:main            pack-builder.core
-                    :output-to       "resources/public/js/compiled/app.js"
+                    :output-to       "dist/web/js/compiled/app.js"
+                    :optimizations   :advanced
+                    :closure-defines {goog.DEBUG false}
+                    :pretty-print    false}}
+    
+    {:id           "app"
+     :source-paths ["src/cljs"]
+     :compiler     {:main            pack-builder.core
+                    :output-to       "app/js/compiled/app.js"
                     :optimizations   :advanced
                     :closure-defines {goog.DEBUG false}
                     :pretty-print    false}}

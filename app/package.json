@@ -1,0 +1,22 @@
+{
+	"name": "repackr",
+	"version": "1.0.0",
+	"description": "18650 Pack Building App",
+	"main": "main.js",
+	"scripts": {
+		"start": "electron ."
+	},
+	"repository": "https://github.com/chrisabird/pack-builder",
+	"keywords": [
+		"Electron",
+		"quick",
+		"start",
+		"tutorial",
+		"demo"
+	],
+	"author": "GitHub",
+	"license": "CC0-1.0",
+	"devDependencies": {
+		"electron": "^1.4.1"
+	}
+}

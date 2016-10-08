@@ -4,3 +4,9 @@
 /resources/public/js/compiled
 out
 *.swp
+app/css
+app/js
+app/index.html
+app/node_modules/*
+app/*.log
+dist/
