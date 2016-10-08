@@ -1,6 +1,12 @@
 (ns pack-builder.handlers
     (:require [re-frame.core :as re-frame]
-              [pack-builder.dbscan :as dbscan]))
+              [pack-builder.dbscan :as dbscan]
+              [pack-builder.anneal :as anneal]))
+
+(defn distance[ca cb] 
+  (let [a (:capacity ca)
+        b (:capacity cb)]
+    (if (< a b) (- b a) (- a b))))
 
 (defn mean [coll]
   (let [sum (reduce #(+ %1 (:capacity %2)) 0 coll)
@@ -36,28 +42,22 @@
         b (rand-int l)]
     (assoc (assoc (vec solution) b (nth solution a)) a (nth solution b))))
 
-(defn cost [cells average-required p]
+(defn cost [average-required p cells]
   (let [packs (partition p cells)]
     (reduce + (map #(.abs js/Math (- (total-capacity %1) average-required)) packs))))
 
-(defn acceptance-probability [old-cost new-cost average-required p t]
+(defn acceptance-probability [p old-cost new-cost t]
   (.pow js/Math (aget js/Math "E") (/ (- old-cost new-cost) t)))
 
 (defn organise-cells [cells s p]
   (let [total-cells (* s p)
-        old-solution (atom (take total-cells (sort-by :capacity > cells)))
-        old-cost (atom (aget js/Number "MAX_VALUE"))
-        average-required (/ (total-capacity @old-solution) s)]
-    (doall 
-      (for [t (take-while #(> %1 0.000001) (iterate (partial * 0.93) 1.0))
-            i (range 100)
-            :let [new-solution (guess-next @old-solution)
-                  new-cost (cost new-solution average-required p)]
-            :when (> (acceptance-probability @old-cost new-cost average-required p t) (rand))]
-          (do
-            (reset! old-solution new-solution)
-            (reset! old-cost new-cost))))
-    (map #(convert-cell-group-to-pack %1 average-required) (partition p @old-solution))))
+        start-solution (take total-cells (sort-by :capacity > cells))
+        average-required (/ (total-capacity start-solution) s)
+        solution (anneal/anneal start-solution
+                                guess-next 
+                                (partial cost average-required p) 
+                                (partial acceptance-probability p))]
+    (map #(convert-cell-group-to-pack %1 average-required) (partition p solution))))
 
 (defn generate-fixed-packs [unused-cells number-of-packs number-of-cells-per-pack]
   (if 
@@ -83,7 +83,7 @@
 
 (defn generate-variable-packs [unused-cells number-of-packs]
   (let [cells (into [] unused-cells)
-        clusters (dbscan/DBSCAN cells 20 3)
+        clusters (dbscan/DBSCAN cells 20 3 distance)
         packs (map (fn [c] (sort-by :capacity > (map #(get cells %1) c))) (first clusters))
         sorted-packs (sort-by count > packs)
         needed-packs (take number-of-packs sorted-packs) 

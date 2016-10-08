@@ -1,10 +1,6 @@
 (ns pack-builder.dbscan
   (:require [clojure.set :as cset]))
 
-(defn distance[ca cb] 
-  (let [a (:capacity ca)
-        b (:capacity cb)]
-    (if (< a b) (- b a) (- a b))))
 
 (defn region-query [distance-fn data eps points p]
   (into #{}
@@ -50,8 +46,8 @@
       p
       (recur (rest c) (cset/difference p (first c))))))
 
-(defn DBSCAN [data eps minpts]
-  (let [query-fn (partial region-query distance data eps)]
+(defn DBSCAN [data eps minpts distance-fn]
+  (let [query-fn (partial region-query distance-fn data eps)]
     (loop [clusters []
            noise []
            points (into #{} (range (count data)))]
