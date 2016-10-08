@@ -1,6 +1,6 @@
 {
 	"name": "repackr",
-	"version": "1.0.0",
+	"version": "0.1.0",
 	"description": "18650 Pack Building App",
 	"main": "main.js",
 	"scripts": {
