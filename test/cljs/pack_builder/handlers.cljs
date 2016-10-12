@@ -62,6 +62,22 @@
     (is (= 1000 (:capacity (first available-cells))))
     (is (= 2000 (:capacity (last available-cells))))))
 
+(deftest should-multiple-tab-seperated-capacities-into-cells
+  (let [db {}
+        capacities "1000\t2000"
+        available-cells (:available-cells (handlers/available-cells-changed db [nil capacities]))]
+    (is (= 2 (count available-cells)))
+    (is (= 1000 (:capacity (first available-cells))))
+    (is (= 2000 (:capacity (last available-cells))))))
+
+(deftest should-multiple-tab-and-line-seperated-capacities-into-cells
+  (let [db {}
+        capacities "1000\t2000\n3000"
+        available-cells (:available-cells (handlers/available-cells-changed db [nil capacities]))]
+    (is (= 3 (count available-cells)))
+    (is (= 1000 (:capacity (first available-cells))))
+    (is (= 3000 (:capacity (last available-cells))))))
+
 
 ;; type of pack
 (deftest should-parse-type-of-pack-of-fixed-cells

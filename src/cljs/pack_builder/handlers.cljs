@@ -99,7 +99,7 @@
     (remove js/isNaN 
             (map js/parseInt 
                  (map clojure.string/trim 
-                      (clojure.string/split capacities #","))))))
+                      (clojure.string/split capacities #"[,\t\n]"))))))
 
 (defn parse-number [s]
   (let [number (js/parseInt (clojure.string/trim s))]

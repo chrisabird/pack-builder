@@ -27,7 +27,7 @@
           [:h3 "Pack Options"]
             [:div.form
               [:div.form-group
-                [:label {:for "numberOfSeriesCells"} "Nubmer of cell in series "]
+                [:label {:for "numberOfSeriesCells"} "Number of cell in series "]
                 [:input.form-control {:type "text"  
                                       :id "numberOfSeriesCells"
                                       :on-change #(re-frame/dispatch [:number-of-series-cells-changed
@@ -72,4 +72,9 @@
                        
                       (if (:used  cell)
                         ^{:key (:id cell)}[:button.btn.btn-success {:type "button" :on-click #(re-frame/dispatch [:allocated-cell-used (:id cell)])} (:capacity cell)]
-                        ^{:key (:id cell)}[:button.btn.btn-default {:type "button" :on-click #(re-frame/dispatch [:allocated-cell-used (:id cell)])} (:capacity cell)]))]])])])))
+                        ^{:key (:id cell)}[:button.btn.btn-default {:type "button" :on-click #(re-frame/dispatch [:allocated-cell-used (:id cell)])} (:capacity cell)]))]])
+             
+              (if (> (count packs) 0) 
+                [:div.col-md-12 [:h3 "Pack Data"] [:p "Tab seperated data (Use this to paste into a google sheet)"]
+                  [:div.form-group
+                    [:textarea.form-control (clojure.string/join "\r\n" (map #(clojure.string/join "\t" (map :capacity (:cells %1))) packs))]]])])])))
