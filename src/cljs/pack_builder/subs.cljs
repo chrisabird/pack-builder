@@ -48,8 +48,6 @@
                     :content "Building your packs..."})
     messages))
 
-
-
 (defn messages [db]
   (->> []
       (required-cells-message db)
@@ -62,3 +60,15 @@
     (> (:number-of-series-cells db) 0)
     (or (> (:number-of-parallel-cells db) 0) (= :variable-cells (:pack-type db)))
     (enough-cells? db)))
+
+(defn packs-tsv [db]
+  (let [packs (:packs db)
+        max-cells (apply max (map #(count (:cells %1)) packs))]
+    (clojure.string/join "\r\n"
+      (map 
+        (partial clojure.string/join "\t")
+        (partition 
+          (count packs) 
+          (for [c (range max-cells) p (range (count packs))]
+            (:capacity (nth (:cells (nth packs p)) c {:capacity 0}))))))))
+

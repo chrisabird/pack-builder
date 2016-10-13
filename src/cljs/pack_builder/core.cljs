@@ -11,6 +11,7 @@
 
 (defn register-subs []
   (re-frame/register-sub :packs (fn [db] (reaction (sub/packs @db))))
+  (re-frame/register-sub :packs-tsv (fn [db] (reaction (sub/packs-tsv @db))))
   (re-frame/register-sub :messages (fn [db] (reaction (sub/messages @db))))
   (re-frame/register-sub :can-generate-packs (fn [db] (reaction (sub/can-generate-packs @db)))))
 

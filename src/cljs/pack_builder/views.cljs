@@ -4,6 +4,7 @@
 
 (defn main-panel []
   (let [packs (re-frame/subscribe [:packs])
+        packs-tsv (re-frame/subscribe [:packs-tsv])
         messages (re-frame/subscribe [:messages])
         can-generate-packs (re-frame/subscribe [:can-generate-packs])]
     (fn []
@@ -77,4 +78,4 @@
               (if (> (count packs) 0) 
                 [:div.col-md-12 [:h3 "Pack Data"] [:p "Tab seperated data (Use this to paste into a google sheet)"]
                   [:div.form-group
-                    [:textarea.form-control (clojure.string/join "\r\n" (map #(clojure.string/join "\t" (map :capacity (:cells %1))) packs))]]])])])))
+                    [:textarea.form-control @packs-tsv]]])])])))

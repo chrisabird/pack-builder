@@ -19,6 +19,22 @@
   (let [db {:available-cells [{:capacity 1000} {:capacity 2000}] :number-of-series-cells 1 :number-of-parallel-cells 0}]
     (is (= false (sub/can-generate-packs db)))))
 
+
+;; packs tsv
+
+(deftest should-be-able-to-represent-single-pack-in-a-tab-seperated-string
+  (let [db {:packs [{:cells [{:capacity 1000} {:capacity 2000}]}]}]
+    (is (= "1000\r\n2000" (sub/packs-tsv db)))))
+
+(deftest should-be-able-to-represent-two-pack-in-a-tab-seperated-string
+  (let [db {:packs [{:cells [{:capacity 1000} {:capacity 2000}]} {:cells [{:capacity 3000} {:capacity 4000}]}]}]
+    (is (= "1000\t3000\r\n2000\t4000" (sub/packs-tsv db)))))
+
+(deftest should-be-able-to-represent-two-uneven-packs-in-a-tab-seperated-string
+  (let [db {:packs [{:cells [{:capacity 1000} {:capacity 2000}]} {:cells [{:capacity 3000} {:capacity 4000} {:capacity 5000}]}]}]
+    (is (= "1000\t3000\r\n2000\t4000\r\n0\t5000" (sub/packs-tsv db)))))
+
+
 ;; required cell message 
 
 (deftest should-show-message-if-not-enough-cells
