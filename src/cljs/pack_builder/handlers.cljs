@@ -32,8 +32,8 @@
   (let [capacity (total-capacity cells)]
     {:id (str (random-uuid))
      :total-capacity capacity
-     :divergence (- capacity average-capacity)
-     :deviation (standard-deviation cells)
+     :divergence (Math/floor (- capacity average-capacity))
+     :deviation (Math/floor (standard-deviation cells))
      :cells (sort-by :capacity > cells)}))
 
 (defn guess-next [solution]
