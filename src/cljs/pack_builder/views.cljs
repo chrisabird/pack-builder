@@ -28,7 +28,7 @@
           [:h3 "Pack Options"]
             [:div.form
               [:div.form-group
-                [:label {:for "numberOfSeriesCells"} "Number of cell in series "]
+                [:label {:for "numberOfSeriesCells"} "Number of cells in series "]
                 [:input.form-control {:type "text"  
                                       :id "numberOfSeriesCells"
                                       :on-change #(re-frame/dispatch [:number-of-series-cells-changed
